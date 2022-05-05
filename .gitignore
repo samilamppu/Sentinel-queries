@@ -1,0 +1,3 @@
+*.json
+# exclude from JSON flag
+!schema.json

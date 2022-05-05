@@ -1,0 +1,49 @@
+id: cdcf4c91-eb2f-437c-951e-3ba0389dc0d5
+name: Global Admin Elevated Access to Azure Root Management Group
+description: |
+  'Detects activity when Global Admin elevates access to Azure Root Management Group as User Access Administrator where it's inherited to all subscriptions'
+severity: High
+queryFrequency: 1h
+queryPeriod: 1h
+triggerOperator: gt
+triggerThreshold: 0
+tactics:
+  - PrivilegeEscalation
+  - CredentialAccess
+relevantTechniques:
+  - T1078
+  - T1110
+
+query:
+CloudAppEvents
+| where ApplicationId == '12260'and Application == 'Microsoft Azure'
+| where parse_json(tostring(parse_json(tostring(RawEventData.authorization)).evidence)).roleDefinitionId == "b21f0835cd464e508cf8e297ff563cb1"
+| where RawEventData.operationName == "Microsoft.Authorization/elevateAccess/action"
+| where parse_json(tostring(parse_json(tostring(RawEventData.authorization)).evidence)).roleAssignmentScope == "/"
+| where parse_json(tostring(parse_json(tostring(RawEventData.authorization)).evidence)).roleAssignmentId == "b507cd211c194747a82e1c2e8584c6da"
+| extend ClientIPAddress = parse_json(tostring(RawEventData.httpRequest)).clientIpAddress
+| extend RoleAssignmentScope = parse_json(tostring(parse_json(tostring(RawEventData.authorization)).evidence)).roleAssignmentScope
+| extend RoleAssignmentId = parse_json(tostring(parse_json(tostring(RawEventData.authorization)).evidence)).roleAssignmentId
+
+Entity mappings: 
+- Entity type: Account
+  fieldMappings:
+    - identifier:Name
+      columname: AccountDisplayName
+- Entity type: IP
+  field mappings:
+    - Identified: Address
+      columname: IPAddress
+- Entity type: Azure Resource
+  field mappings: 
+  - Identifier: ResourceId
+    columname: ObjectId
+- Entity type: Process
+  field mappings:
+  identifier: ProcessId
+  columname: RoleAssignmentId
+- CustomDetails
+  PermissionScope: RoleAssignmentScope
+      
+version: 1.0.0
+
