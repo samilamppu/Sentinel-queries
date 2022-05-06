@@ -1,0 +1,13 @@
+CloudAppEvents
+| where ApplicationId == '12260' or Application contains 'Azure'
+| where ActionType == "Write DiagnosticSettings"
+| extend Audience = RawEventData.audience
+| extend Action = parse_json(tostring(RawEventData.authorization)).action
+| extend Category = RawEventData.eventCategory
+| where Audience == "https://management.core.windows.net/"
+| where Action == "microsoft.aadiam/diagnosticSettings/write"
+| where Category == "Administrative"
+
+
+##Defender for Cloud Apps URI filters
+https://fetanet.portal.cloudappsecurity.com/#/audits/?service=eq(i:12260,)&activity.eventType=eq(12260:EVENT_AZURE_GENERIC:microsoft.aadiam%2FdiagnosticSettings%2Fwrite,)&activityObject=eq(%2Fproviders%2Fmicrosoft.aadiam%2FdiagnosticSettings%2Fazureaddiaglogs,)
