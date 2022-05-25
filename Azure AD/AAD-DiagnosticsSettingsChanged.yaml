@@ -1,0 +1,35 @@
+id: 185fd95d-19b1-4494-bd6f-f2695a280f2f
+name: Azure AD Diagnostic Settings Changed
+description: |
+  'This rule detects when Azure AD diagnostic settings are changed (write/delete). The event might indicate that attacker is trying to hide tracks by preventing sign-in & audit logs flow from Azure AD to SIEM solutions. When even it triggered it's good hygiene to investigate the reason for the change.'
+severity: Medium
+queryFrequency: 10m
+queryPeriod: 30m
+triggerOperator: gt
+triggerThreshold: 0
+tactics:
+  - Defense Evasion
+  - Impact
+relevantTechniques:
+  - T1562
+  - T1565
+query: |
+ CloudAppEvents
+| where ApplicationId == '12260' or Application contains 'Azure'
+| where ActionType == "Write DiagnosticSettings"
+| extend Audience = RawEventData.audience
+| extend Action = parse_json(tostring(RawEventData.authorization)).action
+| extend Category = RawEventData.eventCategory
+| where Audience == "https://management.core.windows.net/"
+| where Action == "microsoft.aadiam/diagnosticSettings/write"
+| where Category == "Administrative"
+entityMappings:
+  - entityType: Account
+    fieldMappings:
+      - identifier: Name
+        columnName: AccountDisplayName
+  - entityType: IP
+    fieldMappings:        
+      - identifier: Address
+        columnName: IPAddress    
+version: 1.0.0
