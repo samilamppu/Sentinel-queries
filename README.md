@@ -1,1 +1,2 @@
 # Sentinel-queries
+Sentinel detection queries which have been written during research work, related to [Azure AD Attack & Defense Playbook](https://github.com/Cloud-Architekt/AzureAD-Attack-Defense/) & [My own blog - samilamppu.com](https://samilamppu.com/)
