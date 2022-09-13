@@ -1,0 +1,15 @@
+//DnsEvents & DnsInventory alert rule
+//The idea is to monitor incoming data in a 24h interval and raise alert if healthy status is greater than 0. Alert rule can be done in Azure Monitor or Sentinel.
+let alertInterval = 24h;
+DnsEvents
+| where TimeGenerated > ago(alertInterval)
+| take 1
+| summarize Healthy = count()
+| project LogType = "DnsEvents", Healthy
+| union isfuzzy=true
+(DnsInventory
+| where TimeGenerated > ago(alertInterval)
+| take 1
+| summarize Healthy = count()
+| project LogType = "DnsInventory", Healthy)
+| where Healthy == 0
