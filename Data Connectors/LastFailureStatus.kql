@@ -1,0 +1,7 @@
+//Last failure status - source: https://docs.microsoft.com/en-us/azure/sentinel/monitor-data-connector-health#use-the-sentinelhealth-data-table-public-preview
+SentinelHealth
+| where TimeGenerated > ago(1d)
+| where OperationName == 'Data fetch status change'
+| where Status in ('Success', 'Failure')
+| summarize TimeGenerated = arg_max(TimeGenerated,*) by SentinelResourceName, SentinelResourceId
+| where Status == 'Failure'
