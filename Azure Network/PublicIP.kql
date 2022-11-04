@@ -1,1 +1,20 @@
-
+//Get create/update activity from Azure resources that's related to public ip address
+AzureActivity
+| where TimeGenerated > ago(30d)
+| extend message_ = tostring(Properties_d.message)
+| extend scope_ = tostring(parse_json(Authorization).scope)
+| extend name_ = tostring(parse_json(tostring(Properties_d.responseBody)).name)
+| extend publicIPAddressVersion_ = tostring(parse_json(tostring(parse_json(tostring(Properties_d.responseBody)).properties)).publicIPAddressVersion)
+| extend publicIPAddressallocationMethod_ = tostring(parse_json(tostring(parse_json(tostring(Properties_d.responseBody)).properties)).publicIPAddressAllocationMethod)
+| extend resourceGuid_ = tostring(parse_json(tostring(parse_json(tostring(Properties_d.responseBody)).properties)).resourceGuid)
+| extend entity_ = tostring(parse_json(Properties).entity)
+| where Category == 'Administrative'
+| where ResourceProviderValue == 'Microsoft.Network'
+| where OperationName == 'Create or Update Public Ip Address'
+| where ActivitySubstatusValue == "Created"
+// Filtering out Azure Databricks
+| where ResourceGroup !contains "databricks"
+// Filtering out Azure Batch 
+| where ResourceId !contains "azurebatch"
+| sort by TimeGenerated desc
+| project TimeGenerated, name_, OperationNameValue, ActivitySubstatusValue, ResourceGroup, Resource, ResourceProviderValue, message_, scope_, publicIPAddressVersion_, CallerIpAddress, Caller, ResourceId
