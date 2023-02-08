@@ -1,0 +1,14 @@
+AzureActivity
+| where CategoryValue == 'Administrative'
+| where ResourceProviderValue contains "MICROSOFT.COMPUTE"
+| extend ['Scope'] = tostring(parse_json(Authorization).scope)
+| extend ['ErrorMessage'] = tostring(parse_json(tostring(parse_json(tostring(parse_json(tostring(parse_json(Properties).statusMessage)).error)).details))[0].message)
+| extend ['Error Code'] = tostring(parse_json(tostring(parse_json(tostring(parse_json(Properties).statusMessage)).error)).code)
+| extend ['Resource Name'] = tostring(Properties_d.resource)
+| extend ['Resource'] = split(['Resource Name'],'/')[0]
+| extend ['SubscriptionId'] = tostring(Properties_d.subscriptionId)
+| extend ['ResourceGroup'] = tostring(Properties_d.resourceGroup)
+| where ErrorMessage contains "Failed to configure Microsoft Defender for Endpoint: Onboarding to MDE via Microsoft Defender for Cloud"
+| where ActivityStatusValue contains "Failure"
+| where Scope contains "MDE.Windows"
+| project TimeGenerated, ['SubscriptionId'], ActivityStatus, CallerIpAddress, Caller, ['ErrorMessage'], ['Error Code'], ['Resource Name'], ['Resource']
