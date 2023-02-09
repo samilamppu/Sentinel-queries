@@ -1,0 +1,26 @@
+//Find out MDE.Linux extension installations where installation status is success
+AzureActivity
+| where CategoryValue == 'Administrative'
+| where ResourceProviderValue contains "MICROSOFT.COMPUTE"
+| extend ['Scope'] = tostring(parse_json(Authorization).scope)
+| extend ['Error Code'] = tostring(parse_json(tostring(parse_json(tostring(parse_json(Properties).statusMessage)).error)).code)
+| extend ['Resource Name'] = tostring(Properties_d.resource)
+| extend ['Resource'] = split(['Resource Name'],'/')[0]
+| extend ['SubscriptionId'] = tostring(Properties_d.subscriptionId)
+| extend ['ResourceGroup'] = tostring(Properties_d.resourceGroup)
+| where ActivityStatusValue contains "Success"
+| where ['Scope'] contains "MDE.Linux"
+
+
+//Find out MDE.Linux extension installations where installation status is Failed
+AzureActivity
+| where CategoryValue == 'Administrative'
+| where ResourceProviderValue contains "MICROSOFT.COMPUTE"
+| extend ['Scope'] = tostring(parse_json(Authorization).scope)
+| extend ['Error Code'] = tostring(parse_json(tostring(parse_json(tostring(parse_json(Properties).statusMessage)).error)).code)
+| extend ['Resource Name'] = tostring(Properties_d.resource)
+| extend ['Resource'] = split(['Resource Name'],'/')[0]
+| extend ['SubscriptionId'] = tostring(Properties_d.subscriptionId)
+| extend ['ResourceGroup'] = tostring(Properties_d.resourceGroup)
+| where ActivityStatusValue contains "Failed"
+| where ['Scope'] contains "MDE.Linux"

@@ -1,3 +1,4 @@
+//Find out MDE.Windows extension where installation status is 'Failure'
 AzureActivity
 | where CategoryValue == 'Administrative'
 | where ResourceProviderValue contains "MICROSOFT.COMPUTE"
@@ -6,9 +7,17 @@ AzureActivity
 | extend ['Error Code'] = tostring(parse_json(tostring(parse_json(tostring(parse_json(Properties).statusMessage)).error)).code)
 | extend ['Resource Name'] = tostring(Properties_d.resource)
 | extend ['Resource'] = split(['Resource Name'],'/')[0]
-| extend ['SubscriptionId'] = tostring(Properties_d.subscriptionId)
-| extend ['ResourceGroup'] = tostring(Properties_d.resourceGroup)
 | where ErrorMessage contains "Failed to configure Microsoft Defender for Endpoint: Onboarding to MDE via Microsoft Defender for Cloud"
 | where ActivityStatusValue contains "Failure"
 | where Scope contains "MDE.Windows"
-| project TimeGenerated, ['SubscriptionId'], ActivityStatus, CallerIpAddress, Caller, ['ErrorMessage'], ['Error Code'], ['Resource Name'], ['Resource']
+| project TimeGenerated, SubscriptionId, ResourceGroup, ActivityStatus, CallerIpAddress, Caller, ['ErrorMessage'], ['Error Code'], ['Resource Name'], ['Resource']
+
+//Find out MDE.Windows extension where installation status is 'Success'
+AzureActivity
+| where CategoryValue == 'Administrative'
+| where ResourceProviderValue contains "MICROSOFT.COMPUTE"
+| extend message_ = tostring(parse_json(Properties).message)
+| extend scope_ = tostring(parse_json(Authorization).scope)
+| where message_ contains "Microsoft.Compute/virtualMachines/extensions/write"
+| where ActivityStatusValue contains "Success"
+| where scope_ contains "MDE.Windows"
