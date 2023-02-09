@@ -18,7 +18,11 @@ AzureActivity
 | where CategoryValue == 'Administrative'
 | where ResourceProviderValue contains "MICROSOFT.COMPUTE"
 | extend message_ = tostring(parse_json(Properties).message)
-| extend scope_ = tostring(parse_json(Authorization).scope)
+| extend ['Scope'] = tostring(parse_json(Authorization).scope)
+| extend ['ResourceName'] = tostring(Properties_d.resource)
+| extend ['Extension'] = split(['ResourceName'],'/')[0]
+| extend ['VM'] = split(['ResourceName'],'/')[1]
 | where message_ contains "Microsoft.Compute/virtualMachines/extensions/write"
 | where ActivityStatusValue contains "Success"
-| where scope_ contains "MDE.Windows"
+| where ['Scope'] contains "MDE.Windows"
+| project TimeGenerated, SubscriptionId, ResourceGroup, ActivityStatus, CallerIpAddress, Caller, ['VM'], ['Extension']
