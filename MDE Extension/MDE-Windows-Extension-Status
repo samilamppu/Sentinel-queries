@@ -26,3 +26,18 @@ AzureActivity
 | where ActivityStatusValue contains "Success"
 | where ['Scope'] contains "MDE.Windows"
 | project TimeGenerated, SubscriptionId, ResourceGroup, ActivityStatus, CallerIpAddress, Caller, ['VM'], ['Extension']
+
+//Find out Azure Arc connected Windows machines where MDE extension installation status is failed
+AzureActivity
+| where CategoryValue == 'Administrative'
+| where ResourceProviderValue contains "MICROSOFT.HYBRIDCOMPUTE"
+| extend ['Scope'] = tostring(parse_json(Authorization).scope)
+| extend ['ErrorMessage'] = tostring(parse_json(tostring(parse_json(tostring(parse_json(Properties).statusMessage)).error)).message)
+| extend ['Error Code'] = tostring(parse_json(tostring(parse_json(tostring(parse_json(Properties).statusMessage)).error)).code)
+| extend ['ResourceName'] = tostring(Properties_d.resource)
+| extend ['VMName'] = split(['ResourceName'],'/')[0]
+| extend ['Extension'] = split(['ResourceName'],'/')[1]
+| where ErrorMessage contains "The resource operation completed with terminal provisioning state 'Failed'"
+| where ActivityStatusValue contains "Failure"
+| where Scope contains "MDE.Windows"
+| project TimeGenerated, ['ResourceName'], ['Resource'], ['ErrorMessage'], ['Error Code'], ['Scope'], SubscriptionId, CallerIpAddress, Caller
