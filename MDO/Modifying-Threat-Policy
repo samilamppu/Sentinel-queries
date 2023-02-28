@@ -1,0 +1,40 @@
+//Anti-phishing policy - Individual setting is changed
+
+// Show Anti-Phishing Policy changes - query from OfficeActvity table
+OfficeActivity
+|where TimeGenerated > ago(1d)
+| where Operation contains "Set-AntiPhishPolicy"
+| where OfficeWorkload == "Exchange"
+| where RecordType == "ExchangeAdmin"
+| extend TargetedUsersToProtect_ = tostring(parse_json(Parameters)[17].Name)
+| extend TargetedUsersToProtectValue_ = tostring(parse_json(Parameters)[17].Value)
+//| where isempty(TargetedUsersToProtectValue_)
+| where isnotempty(TargetedUsersToProtectValue_)
+
+// Show Anti-Phishing Policy changes - query from CloudAppEvents table
+CloudAppEvents
+| where TimeGenerated > ago(1d)
+| where ActionType contains "Set-AntiPhishPolicy"
+| extend TargetedUsersToProtect_ = tostring(parse_json(tostring(RawEventData.Parameters))[17].Name)
+| extend TargetedUsersToProtectValue_ = tostring(parse_json(tostring(RawEventData.Parameters))[17].Value) 
+| where isempty(TargetedUsersToProtectValue_)
+
+
+// Anti-Phishing Policy is disabled
+
+// Anti-Phisping Policy is turned off - query from OfficeActvity table
+OfficeActivity
+| where TimeGenerated > ago(3d)
+| where Operation contains "Disable-AntiPhishRule"
+| where OfficeWorkload == "Exchange"
+| where RecordType == "ExchangeAdmin"
+| where ResultStatus == "True"
+
+
+// Anti-Phisping Policy is turned off - query from CloudAppEvents table
+CloudAppEvents
+| where TimeGenerated > ago(1d)
+| where ActionType contains "Disable-AntiPhishRule"
+| where Application == "Microsoft Exchange Online"
+| where ApplicationId == 20893
+| extend UserId_ = tostring(RawEventData.UserId)

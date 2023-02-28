@@ -1,0 +1,64 @@
+// The following queries detect changes in the 'Safe Links' policy when some of the following settings are turned into a false state:
+// EnableSafeLinksForTeams
+// EnableSafeLinksForEmail
+// EnableSafeLinksForOffice
+// EnableForInternalSenders
+
+// Query changes for SafeLinks Policy in OfficeActivity table
+OfficeActivity 
+| where TimeGenerated > ago(7d) 
+| where RecordType contains "ExchangeAdmin"
+| where OfficeWorkload == "Exchange"
+| where Operation contains "Set-SafeLinksPolicy"
+| extend PolicyName_ = tostring(parse_json(Parameters)[6].Value)
+| extend ScanUrls_ = tostring(parse_json(Parameters)[1].Name)
+| extend ScanUrlsValue_ = tostring(parse_json(Parameters)[1].Value)
+| extend DoNotRewriteUrls_ = tostring(parse_json(Parameters)[2].Name)
+| extend DoNotRewriteUrlsValue_ = tostring(parse_json(Parameters)[2].Value)
+| extend EnableSafeLinksForTeams_ = tostring(parse_json(Parameters)[4].Name)
+| extend EnableSafeLinksForTeamsValue_ = tostring(parse_json(Parameters)[4].Value)
+| extend EnableSafeLinksForEmail_ = tostring(parse_json(Parameters)[5].Name)
+| extend EnableSafeLinksForEmailValue_ = tostring(parse_json(Parameters)[5].Value)
+| extend DisableUrlRewrite_ = tostring(parse_json(Parameters)[7].Name)
+| extend DisableUrlRewriteValue_ = tostring(parse_json(Parameters)[7].Value)
+| extend EnableForInternalSenders_ = tostring(parse_json(Parameters)[8].Name)
+| extend EnableForInternalSendersValue_ = tostring(parse_json(Parameters)[8].Value)
+| extend AllowClickThrough_ = tostring(parse_json(Parameters)[9].Name)
+| extend AllowClickThroughValue_ = tostring(parse_json(Parameters)[9].Value)
+| extend Identity_ = tostring(parse_json(Parameters)[10].Name)
+| extend IdentityValue_ = tostring(parse_json(Parameters)[10].Value)
+| extend EnableSafeLinksForOffice_ = tostring(parse_json(Parameters)[12].Name)
+| extend EnableSafeLinksForOfficeValue_ = tostring(parse_json(Parameters)[12].Value)
+| extend TrackClicks_ = tostring(parse_json(Parameters)[14].Name)
+| extend TrackClicksValue_ = tostring(parse_json(Parameters)[14].Value)
+| where EnableSafeLinksForTeamsValue_ == 'False' or EnableSafeLinksForEmailValue_ == 'False' or EnableSafeLinksForOfficeValue_ == 'False' or EnableForInternalSendersValue_ == 'False'
+
+// Query changes for SafeLinks Policy in OfficeActivity table
+CloudAppEvents
+| where TimeGenerated > ago(7d) 
+| where Application contains "Microsoft Exchange Online"
+| where ApplicationId == '20893'
+| where ActionType contains "Set-SafeLinksPolicy"
+//| where OfficeObjectId == "No direct click through"
+| extend PolicyName_ = tostring(ActivityObjects[8].Name)
+| extend PolicyValue_ = tostring(ActivityObjects[8].Value)
+| extend ScanUrls = tostring(parse_json(tostring(RawEventData.Parameters))[1].Name)
+| extend ScanUrlsValue_ = tostring(parse_json(tostring(RawEventData.Parameters))[1].Value)
+| extend DoNotRewriteUrls_ = tostring(parse_json(tostring(RawEventData.Parameters))[2].Name)
+| extend DoNotRewriteUrlsValue_ = tostring(parse_json(tostring(RawEventData.Parameters))[2].Value)
+| extend EnableSafeLinksForTeams_ = tostring(parse_json(tostring(RawEventData.Parameters))[4].Name)
+| extend EnableSafeLinksForTeamsValue_ = tostring(parse_json(tostring(RawEventData.Parameters))[4].Value)
+| extend EnableSafeLinksForEmail_ = tostring(parse_json(tostring(RawEventData.Parameters))[5].Name)
+| extend EnableSafeLinksForEmailValue_ = tostring(parse_json(tostring(RawEventData.Parameters))[5].Value)
+| extend DisableUrlRewrite_ = tostring(parse_json(tostring(RawEventData.Parameters))[7].Name)
+| extend DisableUrlRewriteValue_ = tostring(parse_json(tostring(RawEventData.Parameters))[7].Value)
+| extend EnableForInternalSenders_ = tostring(parse_json(tostring(RawEventData.Parameters))[8].Name)
+| extend EnableForInternalSendersValue_ = tostring(parse_json(tostring(RawEventData.Parameters))[8].Value)
+| extend AllowClickThrough_ = tostring(parse_json(tostring(RawEventData.Parameters))[9].Name)
+| extend AllowClickThroughValue_ = tostring(parse_json(tostring(RawEventData.Parameters))[9].Value)
+| extend Identity_ = tostring(parse_json(tostring(RawEventData.Parameters))[10].Name)
+| extend IdentityValue_ = tostring(parse_json(tostring(RawEventData.Parameters))[10].Value)
+| extend EnableSafeLinksForOffice_ = tostring(parse_json(tostring(RawEventData.Parameters))[12].Name)
+| extend EnableSafeLinksForOfficeValue_ = tostring(parse_json(tostring(RawEventData.Parameters))[12].Value)
+| extend TrackClicks_ = tostring(parse_json(tostring(RawEventData.Parameters))[14].Name)
+| extend TrackClicksValue_ = tostring(parse_json(tostring(RawEventData.Parameters))[14].Value)
