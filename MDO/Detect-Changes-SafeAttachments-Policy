@@ -1,26 +1,26 @@
 // Query changes for Global MDO ATP Policy (Set-AtpPolicyForO365) in OfficeActivity table
 OfficeActivity 
-| where TimeGenerated > ago(7d) 
+| where TimeGenerated > ago(30d) 
 | where RecordType contains "ExchangeAdmin" 
 | where Operation contains "Set-AtpPolicyForO365" 
-| extend ATPForSPOTeamsODB = tostring(parse_json(Parameters)[1].Name)
-| extend ATPForSPOTeamsODBValue = tostring(parse_json(Parameters)[1].Value)
-| extend EnableSafeDocs = tostring(parse_json(Parameters)[2].Name) 
-| extend EnableSafeDocsValue = tostring(parse_json(Parameters)[2].Value) 
-| extend AllowSafeDocsOpen = tostring(parse_json(Parameters)[3].Name) 
-| extend AllowSafeDocsOpenValue = tostring(parse_json(Parameters)[3].Value)
+| extend ['ATPForSPOTeamsODB'] = tostring(parse_json(Parameters)[1].Name)
+| extend ['ATPForSPOTeamsODBValue'] = tostring(parse_json(Parameters)[1].Value)
+| extend ['EnableSafeDocs'] = tostring(parse_json(Parameters)[2].Name) 
+| extend ['EnableSafeDocsValue'] = tostring(parse_json(Parameters)[2].Value) 
+| extend ['AllowSafeDocsOpen'] = tostring(parse_json(Parameters)[3].Name) 
+| extend ['AllowSafeDocsOpenValue'] = tostring(parse_json(Parameters)[3].Value)
 | where ATPForSPOTeamsODBValue == 'False' or EnableSafeDocs contains "False" or AllowSafeDocsOpen contains "False"
 
 // Query changes for Global MDO ATP Policy (Set-AtpPolicyForO365) in Defender for Cloud Apps table
 CloudAppEvents
-| where TimeGenerated > ago(7d) 
+| where TimeGenerated > ago(30d) 
 | where ActionType == "Set-AtpPolicyForO365"
 | where Application == "Microsoft Exchange Online"
 | extend AppId = tostring(RawEventData.AppId)
-| extend EnableATPForSPOTeamsODB = tostring(ActivityObjects[3].Name)
-| extend EnableATPForSPOTeamsODBValue = tostring(ActivityObjects[3].Value)
-| extend EnableSafeDocs = tostring(ActivityObjects[4].Name)
-| extend EnableSafeDocsValue = tostring(ActivityObjects[4].Value)
-| extend AllowSafeDocsOpen = tostring(ActivityObjects[5].Name)
-| extend AllowSafeDocsOpenValue = tostring(ActivityObjects[5].Value)
+| extend ['EnableATPForSPOTeamsODB'] = tostring(ActivityObjects[3].Name)
+| extend ['EnableATPForSPOTeamsODBValue'] = tostring(ActivityObjects[3].Value)
+| extend ['EnableSafeDocs'] = tostring(ActivityObjects[4].Name)
+| extend ['EnableSafeDocsValue'] = tostring(ActivityObjects[4].Value)
+| extend ['AllowSafeDocsOpen'] = tostring(ActivityObjects[5].Name)
+| extend ['AllowSafeDocsOpenValue'] = tostring(ActivityObjects[5].Value)
 | where EnableATPForSPOTeamsODBValue contains "False" or EnableSafeDocs contains "False" or AllowSafeDocsOpen contains "False"
