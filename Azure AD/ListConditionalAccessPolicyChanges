@@ -1,0 +1,11 @@
+//List changes to CAPs from the past 7 days
+AuditLogs
+| where TimeGenerated >= ago(7d)
+| where Category == "Policy"
+| where ActivityDisplayName == "Update policy"
+| extend ['UserPrincipalName'] = InitiatedBy.user.userPrincipalName 
+| extend ['CA PolicyId'] = tostring(TargetResources[0].id)
+| extend ['CA Policy Name'] = TargetResources[0].displayName
+| where isnotempty('CA PolicyId')
+| project TimeGenerated, ActivityDisplayName, ['UserPrincipalName'], ['CA Policy Name'], ['CA PolicyId']
+| order by TimeGenerated desc
