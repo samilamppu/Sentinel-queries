@@ -1,0 +1,13 @@
+//Azure LH tenant unregistration
+CloudAppEvents
+| where ApplicationId == 12260
+| extend ResourceProvider = RawEventData.resourceProvider
+| extend OperationName =  RawEventData.operationName
+| extend Description = RawEventData.description
+| extend subscriptionId = tostring(parse_json(tostring(RawEventData.description)).subscriptionId)
+| extend subscriptionTenantId = tostring(parse_json(tostring(RawEventData.description)).subscriptionTenantId)
+| extend delegationResourceId = tostring(parse_json(tostring(RawEventData.description)).delegationResourceId)
+| extend Status = RawEventData.status
+| where Status == 'Succeeded'
+| where OperationName has "Microsoft.Resources/tenants/unregister/action"
+| project Timestamp, ActionType, Status, Description, AccountDisplayName, IPAddress, CountryCode, ResourceProvider, OperationName, subscriptionId, subscriptionTenantId, delegationResourceId
