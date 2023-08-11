@@ -1,0 +1,15 @@
+union  
+workspace("insert Log Analytics workspaceId").AzureActivity,
+workspace("insert Log Analytics workspaceId").AzureActivity
+| where CategoryValue == 'Administrative'
+| where ResourceProviderValue == "MICROSOFT.MANAGEDSERVICES"
+| extend Action = tostring(parse_json(Authorization).action)
+| extend ['PrincipalType'] = tostring(parse_json(tostring(parse_json(Authorization).evidence)).principalType)
+| extend ['PrincipalId'] = tostring(parse_json(tostring(parse_json(Authorization).evidence)).principalId)
+| extend ['Role'] = tostring(parse_json(tostring(parse_json(Authorization).evidence)).role)
+| extend ['RoleAssignmentId'] = tostring(parse_json(tostring(parse_json(Authorization).evidence)).roleAssignmentId)
+| extend ['RoleAssignmentScope'] = tostring(parse_json(tostring(parse_json(Authorization).evidence)).roleAssignmentScope)
+| extend ['Scope'] = tostring(parse_json(Authorization).scope)
+| extend ['ClientIpAddress'] = tostring(parse_json(tostring(parse_json(Properties).httpRequest)).clientIpAddress)
+| where Action contains "delete"
+| project TimeGenerated, Action, ['PrincipalId'], ['RoleAssignmentId'], ['Scope'], Caller, ['CallerIpAddress']
