@@ -3,7 +3,6 @@ AzureActivity
 | where CategoryValue == "Administrative"
 | where ResourceProviderValue == "MICROSOFT.STORAGE"
 | where Properties_d.message == "microsoft.insights/diagnosticSettings/delete"
-//| where ActivitySubstatusValue == "OK"
 | extend ['Caller'] = tostring(parse_json(Properties).caller)
 | extend ['Entity'] = tostring(parse_json(Properties).entity)
 | extend ['Message'] = tostring(parse_json(Properties).message)
