@@ -1,0 +1,13 @@
+//Detect Diagnostic settings delete action on storage account blobs
+AzureActivity
+| where CategoryValue == "Administrative"
+| where ResourceProviderValue == "MICROSOFT.STORAGE"
+| where Properties_d.message == "microsoft.insights/diagnosticSettings/delete"
+//| where ActivitySubstatusValue == "OK"
+| extend ['Caller'] = tostring(parse_json(Properties).caller)
+| extend ['Entity'] = tostring(parse_json(Properties).entity)
+| extend ['Message'] = tostring(parse_json(Properties).message)
+| extend ['Resource'] = tostring(parse_json(Properties).resource)
+| extend ['ResourceGroup'] = tostring(parse_json(Properties).resourceGroup)
+| extend ['SubscriptionId'] = tostring(parse_json(Properties).subscriptionId)
+| extend ['Action'] = tostring(parse_json(Authorization).action)

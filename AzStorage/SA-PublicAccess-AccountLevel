@@ -1,0 +1,13 @@
+//Public access set in a storage account level
+AzureActivity
+| where TimeGenerated >= ago(1d)
+| where CategoryValue == "Administrative"
+| where parse_json(Properties).resourceProviderValue == "MICROSOFT.STORAGE"
+| where parse_json(Properties).message == "Microsoft.Storage/storageAccounts/write"
+| extend ['ResourceName'] = tostring(parse_json(Properties).resource)
+| extend ['ResourceId'] = tostring(parse_json(tostring(parse_json(Properties).responseBody)).id)
+| extend ['Entity'] = tostring(Properties_d.entity)
+| extend ['Operation'] = tostring(parse_json(Properties).message)
+| extend ['AllowBlobPublicAccess'] = tostring(parse_json(tostring(parse_json(tostring(Properties_d.requestbody)).properties)).allowBlobPublicAccess)
+| where AllowBlobPublicAccess contains "true"
+| project TimeGenerated, Caller, CallerIpAddress, ['Entity'] , ['Operation'], ['AllowBlobPublicAccess']
