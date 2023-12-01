@@ -1,0 +1,8 @@
+//List blob operations excluding some of the IP-ranges from the query from dedicated storage account
+let operationlist = dynamic(["GetBlob", "DeleteBlob", "GetBlobServiceProperties","GetContainerServiceMetadata"]);
+StorageBlobLogs
+| where TimeGenerated >= ago(10d)
+| where AccountName == "contosohpsa" 
+| where OperationName in (operationlist)
+| where CallerIpAddress !startswith "10." and CallerIpAddress !startswith "172.16." and CallerIpAddress !startswith "192.168." and CallerIpAddress !startswith "169.254."
+| project TimeGenerated, AccountName, OperationName, CallerIpAddress, AuthenticationType, Category, MetricResponseType, CorrelationId, RequesterObjectId, RequesterAppId, RequesterAudience, RequesterTenantId, UserAgentHeader, ServiceType
