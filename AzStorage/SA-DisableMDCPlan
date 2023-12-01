@@ -1,0 +1,14 @@
+//Detect pricing changes in MDC Defender Storage Account plans
+CloudAppEvents
+| where ApplicationId == '12260'
+| where ObjectName == "StorageAccounts"
+| where Application == "Microsoft Azure"
+| where ActionType == "Write Pricings"
+| extend Action = tostring(parse_json(tostring(RawEventData.authorization)).action)
+| extend Role = tostring(parse_json(tostring(parse_json(tostring(RawEventData.authorization)).evidence)).role)
+| extend Scope = tostring(parse_json(tostring(RawEventData.authorization)).scope)
+| extend EventCategory = tostring(RawEventData.eventCategory)
+| extend Url = tostring(parse_json(tostring(RawEventData.httpRequest)).url)
+| where parse_json(tostring(RawEventData.httpRequest)).method == "PUT"
+| extend message_ = tostring(parse_json(tostring(RawEventData.properties)).message)
+| project Action, Role, Scope, EventCategory, Url, AccountDisplayName, UserAgent, IPAddress
