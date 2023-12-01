@@ -5,4 +5,4 @@ StorageBlobLogs
 | where AccountName == "contosohpsa" 
 | where OperationName in (operationlist)
 | where CallerIpAddress !startswith "10." and CallerIpAddress !startswith "172.16." and CallerIpAddress !startswith "192.168." and CallerIpAddress !startswith "169.254."
-| project TimeGenerated, AccountName, OperationName, CallerIpAddress, AuthenticationType, Category, MetricResponseType, CorrelationId, RequesterObjectId, RequesterAppId, RequesterAudience, RequesterTenantId, UserAgentHeader, ServiceType
+| project TimeGenerated, AccountName, OperationName, CallerIpAddress, AuthenticationType, Category, MetricResponseType, CorrelationId, RequesterObjectId, RequesterAppId, RequesterAudience, RequesterTenantId, RequesterUPN, UserAgentHeader, ServiceType
