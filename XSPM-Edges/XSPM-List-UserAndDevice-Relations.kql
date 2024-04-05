@@ -1,0 +1,16 @@
+//List device  relations as SourceNode
+ExposureGraphEdges
+| where SourceNodeLabel has 'microsoft.compute/virtualmachines'
+| where SourceNodeName has '<insert deviceName>'
+
+
+//List device 
+ExposureGraphEdges
+| where SourceNodeLabel has 'microsoft.compute/virtualmachines'
+| where SourceNodeName has '<insert deviceName>'
+| join (
+ExposureGraphEdges
+| where TargetNodeName has '<insert user displayName>'
+| distinct SourceNodeName, TargetNodeName, EdgeLabel, EdgeId
+)
+on EdgeId

@@ -1,0 +1,34 @@
+//List Sensitive users, nestedAdGroupNames (DA) and relations
+ExposureGraphNodes
+| where NodeLabel == 'user'
+| extend Tags = parse_json(tostring(parse_json(tostring(NodeProperties.rawData)).tags.[0]))
+| extend NestedADGroups = parse_json(tostring(parse_json(tostring(NodeProperties.rawData)).nestedAdGroupNames))
+| where Tags == 'Sensitive'
+| mv-expand NestedADGroups
+| where NestedADGroups has 'Domain Admins'
+| join kind=inner ExposureGraphEdges on $left.NodeId == $right.SourceNodeId
+| project NodeName, NestedADGroups, SourceNodeId, TargetNodeName
+
+
+//List specific user node permissions
+ExposureGraphNodes
+| where NodeName has '<insert user displayName>'
+| where NodeId == '9e75ffd96e0942428351140072a8bea0'
+| extend NestedADGroups = parse_json(tostring(parse_json(tostring(NodeProperties.rawData)).nestedAdGroupNames))
+| mv-expand NestedADGroups
+| where NestedADGroups has 'Domain Admins'
+| join kind=inner ExposureGraphEdges on $left.NodeId == $right.SourceNodeId
+//filtering out group
+| where TargetNodeName !has 'SE-Group-1'
+| project NodeName, NestedADGroups, SourceNodeId, TargetNodeName, TargetNodeId
+
+
+
+//List group role - can authenticate to & member of
+ExposureGraphEdges
+| where SourceNodeLabel == 'group'
+| where EdgeLabel has 'can authenticate to' or EdgeLabel has 'Member of'
+//filtering out group
+| where SourceNodeName has 'HelpDeskGroup'
+| extend UserPermissionsOnDevices = parse_json(tostring(parse_json(tostring(EdgeProperties.rawData)).userRightsOnDevice.isLocalAdmin))
+| project EdgeId, EdgeLabel, SourceNodeName, SourceNodeCategories, SourceNodeLabel, TargetNodeName, UserPermissionsOnDevices

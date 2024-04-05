@@ -1,0 +1,17 @@
+//List SP contributor perms to subscriptions
+let Identity = IdentityInfo
+| distinct AccountObjectId, AccountName;
+ExposureGraphNodes
+| where NodeLabel == 'serviceprincipal'
+| mv-expand EntityIds
+| extend EntityType = tostring(EntityIds.id)
+| extend Tags = parse_json(tostring(parse_json(tostring(NodeProperties.rawData)).tags.[0]))
+| join kind=inner ExposureGraphEdges on $left.NodeId == $right.SourceNodeId
+| extend Permissions = parse_json(tostring(parse_json(tostring(EdgeProperties.rawData)).permissions.roles.[0]))
+| extend Role = tostring(Permissions.name)
+| where SourceNodeLabel has 'serviceprincipal'
+| where EdgeLabel has 'has role on'
+| where EdgeProperties has 'contributor'
+| where TargetNodeLabel has 'subscriptions'
+| join kind=inner Identity on $left.SourceNodeName == $right.AccountObjectId
+| project NodeLabel, NodeName,NodeId, EntityIds, EdgeId, EdgeLabel, SourceNodeId, TargetNodeName, TargetNodeLabel, Role, AccountName, AccountObjectId

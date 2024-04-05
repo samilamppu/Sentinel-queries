@@ -1,0 +1,5 @@
+//List Tier-0 devices
+ExposureGraphNodes
+| where NodeLabel == "microsoft.compute/virtualmachines"
+| where parse_json(tostring(parse_json(tostring(NodeProperties.rawData)).tags)).tags.criticality == "Tier-0"
+| project NodeName, NodeProperties

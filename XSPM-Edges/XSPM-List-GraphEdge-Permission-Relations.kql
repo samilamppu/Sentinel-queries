@@ -1,0 +1,26 @@
+//List GraphEdge permissions for managedidentity
+union withsource=SourceTable ExposureGraphEdges
+| where EdgeLabel == "has permissions to"
+| where SourceNodeLabel == "managedidentity"
+| where EdgeProperties has "Contributor"
+
+
+//List GraphEdge permissions for serviceprincipals
+union withsource=SourceTable ExposureGraphEdges
+| where EdgeLabel == "has permissions to"
+| where SourceNodeLabel == "serviceprincipal"
+| where EdgeProperties has "Contributor"
+
+
+//List GraphEdge permissions with identity correlated from IdentityInfo table
+union withsource=SourceTable ExposureGraphEdges
+| where EdgeLabel == "has permissions to"
+| where SourceNodeLabel == "managedidentity"
+| where EdgeProperties has "Contributor"
+| join (
+IdentityInfo
+| where AccountObjectId == '70d0d143-6ce1-490e-a1c9-76532c150a67'
+| distinct AccountObjectId, AccountName
+)
+on $left.SourceNodeName == $right.AccountObjectId
+| project EdgeId, EdgeLabel, SourceNodeId, SourceNodeLabel, SourceNodeName, AccountObjectId, AccountName, EdgeProperties

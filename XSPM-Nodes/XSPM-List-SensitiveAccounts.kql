@@ -1,0 +1,22 @@
+//List Sensitive accounts
+ExposureGraphNodes
+| where NodeLabel == 'user'
+| extend Tags = parse_json(tostring(parse_json(tostring(NodeProperties.rawData)).tags.[0]))
+| extend NestedADGroups = parse_json(tostring(parse_json(tostring(NodeProperties.rawData)).nestedAdGroupNames))
+| where Tags == 'Sensitive'
+
+
+//List Sensitive accounts who are also member of on-prem AD high-privilege built-in groups 
+ExposureGraphNodes
+| where NodeLabel == 'user'
+| extend Tags = parse_json(tostring(parse_json(tostring(NodeProperties.rawData)).tags.[0]))
+| extend NestedADGroups = parse_json(tostring(parse_json(tostring(NodeProperties.rawData)).nestedAdGroupNames))
+| where Tags == 'Sensitive'
+| where NestedADGroups has 'Domain Admins' or NestedADGroups has 'Administrators' or NestedADGroups has 'Enterprise Admins'
+
+
+//List Sensitive accounts which PasswordNeverExpires
+ExposureGraphNodes
+| where NodeLabel == 'user'
+| where NodeProperties has 'Sensitive'
+| where NodeProperties has 'PasswordNeverExpires'

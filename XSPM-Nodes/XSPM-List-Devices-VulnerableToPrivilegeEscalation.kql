@@ -1,0 +1,8 @@
+//List devices that are for vulnerableToPrivilegeEscalation & are exposedToInternet
+union withsource=SourceTable ExposureGraphNodes
+| where Categories contains "virtual_machine"
+| where NodeProperties contains "vulnerableToPrivilegeEscalation"
+| extend vulnerableToPrivilegeEscalation = parse_json(tostring(parse_json(tostring(NodeProperties.rawData)).highRiskVulnerabilityInsights)).vulnerableToPrivilegeEscalation.hasHighOrCritical
+| where vulnerableToPrivilegeEscalation == 'true'
+| where NodeProperties contains "exposedToInternet"
+  or NodeProperties contains "exposedToInternetDevice"

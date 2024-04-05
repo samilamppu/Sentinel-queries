@@ -1,0 +1,7 @@
+//List group role - can authenticate to & member of
+ExposureGraphEdges
+| where SourceNodeLabel == 'group'
+| where EdgeLabel has 'can authenticate to' or EdgeLabel has 'Member of'
+| where SourceNodeName has '<Group displayName here>'
+| extend UserPermissionsOnDevices = parse_json(tostring(parse_json(tostring(EdgeProperties.rawData)).userRightsOnDevice.isLocalAdmin))
+| project EdgeId, EdgeLabel, SourceNodeName, SourceNodeCategories, SourceNodeLabel, TargetNodeName, UserPermissionsOnDevices

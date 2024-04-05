@@ -1,0 +1,4 @@
+//List Azure resources that has public IP address.
+arg("").Resources
+| where properties matches regex @'[12]\d\d(\.([1-9]?\d|[12]\d\d)){3}'
+|project  name, type, location, resourceGroup, subscriptionId, properties

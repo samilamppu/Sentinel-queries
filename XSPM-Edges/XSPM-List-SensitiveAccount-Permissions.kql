@@ -1,0 +1,30 @@
+//List target user (Sensitive) permissions 
+ExposureGraphNodes
+| where NodeLabel == 'user'
+| where NodeName == '<user displayName>'
+| extend Tags = parse_json(tostring(parse_json(tostring(NodeProperties.rawData)).tags.[0]))
+| extend CriticalityLevel = parse_json(tostring(parse_json(tostring(NodeProperties.rawData)).criticalityLevel.ruleNames.[0]))
+| extend CriticalityLevelV2 = parse_json(tostring(parse_json(tostring(NodeProperties.rawData)).criticalityLevel.ruleNames.[1]))
+| extend NestedADGroups = parse_json(tostring(parse_json(tostring(NodeProperties.rawData)).nestedAdGroupNames))
+| where Tags == 'Sensitive'
+//| where CriticalityLevel == 'Domain Admins'
+//| where CriticalityLevelV2 == 'Administrators'
+
+
+//List sentive groups relations
+union withsource=SourceTable ExposureGraphEdges
+| where EdgeLabel has 'has role on'
+| where SourceNodeName has 'Domain Admins' or SourceNodeName has 'Enterprise Admins' or SourceNodeName has 'Administrators' or SourceNodeName has 'Schema Admins'
+| where TargetNodeLabel == 'user'
+
+
+/Drill down to attack path and lateral movement
+union withsource=SourceTable ExposureGraphEdges
+| where SourceNodeLabel == 'user'
+| where SourceNodeName has '<user displayName>'
+
+
+union withsource=SourceTable ExposureGraphEdges
+| where SourceNodeLabel == 'group'
+| where EdgeLabel has 'member of'
+| where TargetNodeName has 'Print Operators' or TargetNodeName has 'DnsAdmin' or TargetNodeName has 'Administrators' or  TargetNodeName has 'Administrators' or TargetNodeName has 'Schema Admins' or TargetNodeName has 'Domain Admins' or TargetNodeName has 'Enterprise Admins'

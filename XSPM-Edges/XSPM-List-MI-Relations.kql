@@ -1,0 +1,11 @@
+//List all SourceNode and TargetNodeLabel relations
+ExposureGraphEdges
+|summarize by SourceNodeLabel, TargetNodeLabel
+
+//List GraphEdge Microsoft Sentinel permissions
+union withsource=SourceTable ExposureGraphEdges
+| where EdgeLabel == "has permissions to"
+| where SourceNodeLabel == "managedidentity"
+| where parse_json(tostring(parse_json(tostring(EdgeProperties.rawData)).permissions)).roles.[0].name == "Microsoft Sentinel Responder"
+| where EdgeProperties has "Microsoft Sentinel Responder"
+| project EdgeId, EdgeLabel, SourceNodeId, SourceNodeName, EdgeProperties

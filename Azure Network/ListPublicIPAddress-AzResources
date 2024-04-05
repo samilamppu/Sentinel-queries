@@ -1,0 +1,9 @@
+//List Azure resources that has public IP address from Log Analytics using Azure Resource Graph. Contains all the resources that has publiIPAddress parameter.
+arg("").Resources
+| where type == 'microsoft.network/publicipaddresses'
+| where isnotempty(properties.ipAddress)
+| where resourceGroup !contains 'databricks'
+| summarize count() by subscriptionId, resourceGroup
+, publicIPAllocationMethod = tostring(properties.publicIPAllocationMethod), name, tostring(properties.ipAddress)
+, tostring(properties.provisioningState)
+, tostring(properties.pulicIPAddressversion)
