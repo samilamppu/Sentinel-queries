@@ -1,0 +1,7 @@
+CloudAppEvents
+| where ApplicationId == '53016'
+| extend AccessedResources = parse_json(tostring(parse_json(tostring(RawEventData.CopilotEventData)).AccessedResources))
+| extend AppHost = parse_json(tostring(parse_json(tostring(RawEventData.CopilotEventData)).AppHost))
+| extend Contexts = parse_json(tostring(parse_json(tostring(RawEventData.CopilotEventData)).Contexts)).[0].id
+| extend ThreadId = parse_json(tostring(parse_json(tostring(RawEventData.CopilotEventData)).ThreadId))
+| project Timestamp, AccountId, IPAddress, CountryCode, AccessedResources, AppHost, Contexts, ThreadId
