@@ -1,0 +1,15 @@
+//Web Content Filtering - SmartScreenBlocks or ExploitGuardNetworkProtectionBlocked where responseCategory = 3rd party & Experience = 1p browser 
+DeviceEvents 
+| where ActionType in ('SmartScreenUrlWarning','ExploitGuardNetworkProtectionBlocked') 
+| extend ParsedFields=parse_json(AdditionalFields) 
+| project DeviceName, ActionType, Timestamp, RemoteUrl, InitiatingProcessFileName, ResponseCategory=tostring(ParsedFields.ResponseCategory), Experience=tostring(ParsedFields.Experience) 
+| where ResponseCategory == "CustomPolicy" or Experience == "CustomPolicy"
+
+
+
+// Web Content Filtering - CustomBlockList Used 
+DeviceEvents 
+| where ActionType in ('SmartScreenUrlWarning','ExploitGuardNetworkProtectionBlocked') 
+| extend ParsedFields=parse_json(AdditionalFields) 
+| project DeviceName, ActionType, Timestamp, RemoteUrl, InitiatingProcessFileName, ResponseCategory=tostring(ParsedFields.ResponseCategory), Experience=tostring(ParsedFields.Experience) 
+| where ResponseCategory == "CustomBlockList" or Experience == "CustomBlockList"

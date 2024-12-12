@@ -1,0 +1,21 @@
+//List specific URL from various data tables
+let url = "dewi";
+search in (EmailUrlInfo,UrlClickEvents,DeviceNetworkEvents,DeviceFileEvents,DeviceEvents,BehaviorEntities)
+Timestamp between (ago(30d) .. now())
+and (RemoteUrl contains url
+or FileOriginUrl contains url
+or FileOriginReferrerUrl contains url
+or Url contains url
+)
+| take 100
+
+
+//List specific URLClick from MDO data tables
+UrlClickEvents
+| where Timestamp > ago(30d)
+| extend UrlBlocked = ActionType has_any("ClickBlocked")
+| extend UrlAllowed = ActionType has_any('ClickAllowed')
+| extend UrlPendingVerdict = ActionType has_any('UrlScanInProgress')
+| extend ErrorPage = ActionType has_any('UrlErrorPage')
+| summarize Blocked = countif(UrlBlocked), Allowed = countif(UrlAllowed), PendingVerdict = countif(UrlPendingVerdict), 
+Error = countif(ErrorPage), ClickedThrough = countif(IsClickedThrough)  by Url

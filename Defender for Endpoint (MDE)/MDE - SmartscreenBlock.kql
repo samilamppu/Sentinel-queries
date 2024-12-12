@@ -1,0 +1,6 @@
+//SmartScreenBlocks or ExploitGuardNetworkProtectionBlocked which is 3rd party process or browser 
+DeviceEvents 
+| where ActionType in ('SmartScreenUrlWarning','ExploitGuardNetworkProtectionBlocked') 
+| extend ParsedFields=parse_json(AdditionalFields) 
+| project DeviceName, ActionType, Timestamp, RemoteUrl, InitiatingProcessAccountName, ResponseCategory=tostring(ParsedFields.ResponseCategory),Experience=tostring(ParsedFields.Experience) 
+| where ResponseCategory == "Malicious" or Experience == "Malicious"
