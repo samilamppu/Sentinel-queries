@@ -1,0 +1,47 @@
+//Summarize activities by AuditSource in Defender for Cloud Apps
+CloudAppEvents
+| summarize TotalCount = count() by AuditSource
+| where AuditSource in (
+    "Defender for Cloud Apps app connector",
+    "Defender for Cloud Apps access control",
+    "Defender for Cloud Apps session control"
+)
+
+
+//Identify events by Defender for Cloud Apps session control
+CloudAppEvents
+| where AuditSource contains "Defender for Cloud Apps session control"
+| extend ParsedSessionData = parse_json(SessionData)
+| extend InLineSessionId = tostring(ParsedSessionData.InLineSessionId)
+| project Timestamp, AccountDisplayName, AccountObjectId, Application, IPAddress, ActivityType, AuditSource, InLineSessionId
+| order by Timestamp desc
+
+
+
+//Filter by Specific InLineSessionId
+let TargetSessionId = "<insert InLineSessionId>";
+CloudAppEvents
+| extend ParsedSessionData = parse_json(SessionData)
+| where tostring(ParsedSessionData.InLineSessionId) == TargetSessionId
+| project Timestamp, Application, AccountDisplayName, AccountObjectId, ActivityType, IPAddress, ParsedSessionData
+
+
+
+//Detect Multiple Session Sources by User
+CloudAppEvents
+| where AuditSource contains "Defender for Cloud Apps session control"
+| extend InLineSessionId = tostring(SessionData.InLineSessionId)
+| summarize SessionCount = dcount(InLineSessionId) by AccountDisplayName, IPAddress
+| where SessionCount > 0
+| project AccountDisplayName, IPAddress, SessionCount
+| order by SessionCount desc
+
+
+
+//Track Anomalous Session Activity
+CloudAppEvents
+| where AuditSource contains "Defender for Cloud Apps session control"
+| extend InLineSessionId = tostring(SessionData.InLineSessionId)
+| summarize ActivityCount = count() by InLineSessionId, AccountDisplayName
+| where ActivityCount > 100 // Adjust threshold based on baseline
+| order by ActivityCount desc
