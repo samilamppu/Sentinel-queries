@@ -1,0 +1,14 @@
+//Get user Relationships to entra-cookies (can authenticate as)
+// Step 1: Extract the Specific User from ExposureGraphNodes
+let UserNodes = ExposureGraphNodes
+| where NodeLabel contains "user"
+| where set_has_element(Categories, "identity")  
+| project NodeId, UserAccountName = NodeName;
+// Step 2: Find Authentication Paths for That User
+UserNodes
+| join (
+    ExposureGraphEdges
+    | where EdgeLabel == "can authenticate as"
+    | project SourceNodeId, SourceNodeName, TargetNodeId, EdgeLabel, SourceNodeLabel
+) 
+on $left.NodeId == $right.TargetNodeId

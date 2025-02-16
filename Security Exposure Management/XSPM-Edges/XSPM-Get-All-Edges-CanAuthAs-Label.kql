@@ -1,0 +1,13 @@
+//Get all Edges with can authenticate as label
+ExposureGraphEdges
+| where EdgeLabel == "can authenticate as"
+| join kind=inner (
+    ExposureGraphNodes
+    | project NodeId, SourceNodeName = NodeName, SourceNodeLabel = NodeLabel
+) on $left.SourceNodeId == $right.NodeId
+| join kind=inner (
+    ExposureGraphNodes
+    | project NodeId, TargetResourceName = NodeName, TargetResourceLabel = NodeLabel
+) on $left.TargetNodeId == $right.NodeId
+| project SourceNodeName, SourceNodeLabel, EdgeLabel, TargetResourceName, TargetResourceLabel
+| order by SourceNodeName asc

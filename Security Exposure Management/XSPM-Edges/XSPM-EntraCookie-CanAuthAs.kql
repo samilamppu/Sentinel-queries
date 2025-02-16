@@ -1,0 +1,17 @@
+//List entra-cookies where can authenticate as is included
+// Step 1: Get All Entra User Cookies
+let EntraCookies = ExposureGraphNodes
+| where NodeLabel == "entra-userCookie"
+| project NodeId, CookieName = NodeName;
+// Step 2: Find "Can Authenticate As" Relationships for These Cookies
+let CookieAuthEdges = ExposureGraphEdges
+| where EdgeLabel == "can authenticate as";
+// Step 3: Join Entra Cookies with Their Authentication Paths
+EntraCookies
+| join kind=inner (CookieAuthEdges) on $left.NodeId == $right.SourceNodeId
+| join kind=inner (
+    ExposureGraphNodes 
+    | project NodeId, TargetResourceName = NodeName, TargetResourceLabel = NodeLabel
+) on $left.TargetNodeId == $right.NodeId
+| project CookieName, EdgeLabel, TargetResourceName, TargetResourceLabel
+| order by CookieName asc
