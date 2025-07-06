@@ -1,0 +1,16 @@
+// List plugin modifications
+CloudAppEvents
+| where ActionType in ('CreatePlugin', 'DisablePlugin', 'EnablePlugin', 'UpdatePlugin')
+| where isnotempty(RawEventData)
+| where parse_json(RawEventData)["AppIdentity"] == 'Copilot.Security.SecurityCopilot'
+| where parse_json(RawEventData)["Workload"] == 'Copilot'
+| where isnotempty(RawEventData.CopilotSettingsEventData)
+| extend Operation = tostring(RawEventData.Operation)
+| extend SCResource = parse_json(tostring(RawEventData.CopilotSettingsEventData)).Resource[0]
+| where isnotempty(SCResource)
+| extend 
+    PluginName = tostring(SCResource.Property),
+    OriginalValue = tostring(SCResource.OriginalValue),
+    NewValue = tostring(SCResource.NewValue)
+| project-away SCResource
+| project TimeGenerated, AccountId, Operation, PluginName, OriginalValue, NewValue
