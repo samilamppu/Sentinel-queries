@@ -1,0 +1,9 @@
+// Query to find all critical identities from Exposure Management
+ExposureGraphNodes
+| where NodeLabel in ("account", "gcp.user", "iam.user", "user" )
+| where NodeProperties has "criticalityLevel"
+| extend CriticalityLevel = toint(NodeProperties.rawData.criticalityLevel.criticalityLevel)
+| extend RuleBasedCriticalityLevel = toint(NodeProperties.rawData.criticalityLevel.ruleBasedCriticalityLevel)
+| extend RuleNames = tostring(NodeProperties.rawData.criticalityLevel.ruleNames)
+| where CriticalityLevel >= 0 or RuleBasedCriticalityLevel >= 0 or isnotnull(RuleNames)
+| project NodeName, CriticalityLevel, RuleBasedCriticalityLevel, AppliedRules = RuleNames, Categories, NodeLabel, NodeId
