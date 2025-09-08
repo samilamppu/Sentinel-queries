@@ -14,16 +14,3 @@ ExposureGraphNodes
 | extend RuleNames = tostring(NodeProperties.rawData.ruleNames)
 | project NodeId, NodeName, Categories, NodeLabel, CriticalityLevel, RuleBasedCriticalityLevel, CriticalityDescription, RuleNames, NodeProperties
 | sort by CriticalityLevel desc, RuleBasedCriticalityLevel desc, NodeName asc
-
-
-
-
-// Query to find all critical devices from Exposure Management
-ExposureGraphNodes
-| where NodeLabel in ("device", "ec2.instance", "microsoft.compute/virtualmachines")
-| where NodeProperties has "criticalityLevel"
-| extend CriticalityLevel = toint(NodeProperties.rawData.criticalityLevel.criticalityLevel)
-| extend RuleBasedCriticalityLevel = toint(NodeProperties.rawData.criticalityLevel.ruleBasedCriticalityLevel)
-| extend RuleNames = tostring(NodeProperties.rawData.criticalityLevel.ruleNames)
-| where CriticalityLevel >= 0 or RuleBasedCriticalityLevel >= 0 or isnotnull(RuleNames)
-| project DeviceName = NodeName, DeviceId = NodeId, CriticalityLevel, RuleBasedCriticalityLevel, AppliedRules = RuleNames, Categories, NodeLabel
