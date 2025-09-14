@@ -1,2 +1,10 @@
-*.json
 # exclude from JSON flag
+*.json
+*.LOG
+*.txt
+*.JSON
+*.pdf
+# Exclude all docx files
+*.docx
+# Exclude env
+*.env
