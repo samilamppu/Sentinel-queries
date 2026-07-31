@@ -1,0 +1,75 @@
+// Identify AI agents (Microsoft Foundry, Copilot Studio, Microsoft 365 Copilot) that still run on a "classic"
+// Entra service principal instead of an Entra Agent ID blueprint-derived identity.
+// Agents provisioned through Entra Agent ID carry an EntraBlueprintId; agents backed by a traditional app
+// registration / enterprise application only have EntraAgentId (the enterprise app object ID).
+// AgentsInfo is in preview and column availability varies per tenant, so identity columns are resolved with
+// column_ifexists(). Run 'AgentsInfo | getschema' to see what your tenant exposes.
+// Schema: https://learn.microsoft.com/defender-xdr/advanced-hunting-agentsinfo-table
+//         https://learn.microsoft.com/defender-xdr/advanced-hunting-entraidspnsigninevents-table
+let LookBack = 30d;
+// Run 'AgentsInfo | distinct Platform' first and adjust to the platform values present in your tenant.
+let TargetPlatforms = dynamic(["Foundry", "Copilot"]);
+let SpnActivity = EntraIdSpnSignInEvents
+    | where Timestamp > ago(LookBack)
+    | where isnotempty(ServicePrincipalId)
+    | summarize
+        SpnSignIns = count(),
+        FailedSignIns = countif(ErrorCode != 0),
+        ManagedIdentitySignIns = countif(IsManagedIdentity == true),
+        LastSpnSignIn = max(Timestamp),
+        AccessedResources = make_set(ResourceDisplayName, 10),
+        SignInCountries = make_set(Country, 10)
+        by ServicePrincipalId;
+AgentsInfo
+| where Timestamp > ago(LookBack)
+| summarize arg_max(Timestamp, *) by AgentId
+| extend
+    AgentPlatform = tostring(column_ifexists("Platform", "")),
+    AgentDisplayName = tostring(column_ifexists("AgentName", "")),
+    SpObjectId = tostring(column_ifexists("EntraAgentId", "")),
+    BlueprintId = tostring(column_ifexists("EntraBlueprintId", "")),
+    Lifecycle = tostring(column_ifexists("LifecycleStatus", "")),
+    Published = tostring(column_ifexists("PublishedStatus", "")),
+    DeploymentScope = tostring(column_ifexists("Availability", "")),
+    AgentOwners = column_ifexists("Owners", dynamic(null)),
+    AuthModel = column_ifexists("ToolsAuthenticationType", dynamic(null)),
+    AgentPermissions = column_ifexists("Permissions", dynamic(null)),
+    RawInfo = column_ifexists("RawAgentInfo", dynamic(null))
+| where Lifecycle != "Deleted"
+| where array_length(TargetPlatforms) == 0 or AgentPlatform has_any (TargetPlatforms)
+| extend IdentityModel = case(
+    isnotempty(BlueprintId), "Entra Agent ID (blueprint)",
+    isnotempty(SpObjectId), "Classic service principal",
+    "No Entra identity mapped")
+| where IdentityModel != "Entra Agent ID (blueprint)"
+| join kind=leftouter SpnActivity on $left.SpObjectId == $right.ServicePrincipalId
+| extend
+    SignedInLast7Days = LastSpnSignIn > ago(7d),
+    IsManagedIdentity = ManagedIdentitySignIns > 0
+| project
+    Timestamp, AgentDisplayName, AgentId, AgentPlatform, IdentityModel, SpObjectId, BlueprintId,
+    Published, Lifecycle, DeploymentScope, AgentOwners, AuthModel, AgentPermissions,
+    SpnSignIns, FailedSignIns, LastSpnSignIn, SignedInLast7Days, IsManagedIdentity,
+    AccessedResources, SignInCountries, RawInfo
+| sort by SpnSignIns desc, Timestamp desc
+
+
+// Summary view: classic service principal adoption ratio per agent platform.
+let LookBack = 30d;
+AgentsInfo
+| where Timestamp > ago(LookBack)
+| summarize arg_max(Timestamp, *) by AgentId
+| extend
+    AgentPlatform = tostring(column_ifexists("Platform", "")),
+    SpObjectId = tostring(column_ifexists("EntraAgentId", "")),
+    BlueprintId = tostring(column_ifexists("EntraBlueprintId", "")),
+    Lifecycle = tostring(column_ifexists("LifecycleStatus", ""))
+| where Lifecycle != "Deleted"
+| summarize
+    Agents = count(),
+    BlueprintIdentities = countif(isnotempty(BlueprintId)),
+    ClassicServicePrincipals = countif(isempty(BlueprintId) and isnotempty(SpObjectId)),
+    NoEntraIdentity = countif(isempty(BlueprintId) and isempty(SpObjectId))
+    by AgentPlatform
+| extend ClassicSpnPercentage = round(todouble(ClassicServicePrincipals) * 100 / Agents, 1)
+| sort by ClassicSpnPercentage desc

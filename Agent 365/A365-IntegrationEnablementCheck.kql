@@ -1,0 +1,75 @@
+// Validate that the Microsoft Agent 365 / "Security for AI" integrations are enabled and actually flowing data.
+// The Defender toggle (Settings > Security for AI) is On by default after Agent 365 onboarding, so a missing or
+// stale signal below usually means the toggle was switched off or a required connector was never connected.
+// References: https://learn.microsoft.com/defender-xdr/security-for-ai/get-started-defender-security-for-ai
+//             https://learn.microsoft.com/defender-xdr/security-for-ai/ai-agent-detection-protection
+//             https://learn.microsoft.com/microsoft-agent-365/developer/observability-concepts
+let LookBack = 7d;
+let StaleAfter = 24h;
+let A365ObservabilityActions = dynamic(["InvokeAgent", "InferenceCall", "ExecuteToolBySDK", "ExecuteToolByGateway", "ExecuteToolByMCPServer"]);
+union
+(
+    AgentsInfo
+    | where Timestamp > ago(LookBack)
+    | summarize Events = count(), Entities = dcount(AgentId), LastSeen = max(Timestamp)
+    | extend Signal = "Agent inventory (AgentsInfo)",
+             Integration = "Agent 365 registry + Security for AI data collection"
+),
+(
+    CloudAppEvents
+    | where Timestamp > ago(LookBack)
+    | where ActionType in (A365ObservabilityActions)
+    | summarize Events = count(), Entities = dcount(tostring(RawEventData.AgentId)), LastSeen = max(Timestamp)
+    | extend Signal = "Agent runtime activity (Agent 365 observability)",
+             Integration = "Microsoft 365 connector - Microsoft 365 activities"
+),
+(
+    CloudAppEvents
+    | where Timestamp > ago(LookBack)
+    | where ApplicationId == 12260
+    | summarize Events = count(), Entities = dcount(AccountObjectId), LastSeen = max(Timestamp)
+    | extend Signal = "Microsoft Entra ID management events",
+             Integration = "Microsoft 365 connector - Microsoft Entra ID Management events"
+),
+(
+    EntraIdSpnSignInEvents
+    | where Timestamp > ago(LookBack)
+    | summarize Events = count(), Entities = dcount(ServicePrincipalId), LastSeen = max(Timestamp)
+    | extend Signal = "Service principal / managed identity sign-ins",
+             Integration = "Microsoft Entra ID P2 sign-in collection"
+),
+(
+    // Real-time protection audit and block events are written as behaviors; validate the filter against your tenant.
+    BehaviorInfo
+    | where Timestamp > ago(LookBack)
+    | where ActionType has "Agent" or Description has "agent"
+    | summarize Events = count(), Entities = dcount(BehaviorId), LastSeen = max(Timestamp)
+    | extend Signal = "Real-time protection behaviors (agent related)",
+             Integration = "Copilot Studio real-time protection / Defender for Cloud Apps"
+)
+| extend Status = case(
+    Events == 0, "Not detected - integration disabled or not onboarded",
+    LastSeen < ago(StaleAfter), "Stale - no data in the last 24h",
+    "Healthy")
+| project Signal, Integration, Status, Events, Entities, LastSeen
+| sort by Status asc
+
+
+// Platform coverage: a missing platform row means that platform's integration is not connected.
+// Expected platforms after full onboarding: Copilot Studio, Foundry, Microsoft 365 Copilot, third-party, endpoint.
+AgentsInfo
+| where Timestamp > ago(30d)
+| summarize arg_max(Timestamp, *) by AgentId
+| extend
+    AgentPlatform = tostring(column_ifexists("Platform", "")),
+    Published = tostring(column_ifexists("PublishedStatus", "")),
+    Lifecycle = tostring(column_ifexists("LifecycleStatus", ""))
+| summarize
+    Agents = count(),
+    PublishedAgents = countif(Published == "Published"),
+    ActiveAgents = countif(Lifecycle == "Active"),
+    BlockedAgents = countif(Lifecycle == "Blocked"),
+    LastInventoryUpdate = max(Timestamp)
+    by AgentPlatform
+| extend InventoryStale = LastInventoryUpdate < ago(24h)
+| sort by Agents desc
